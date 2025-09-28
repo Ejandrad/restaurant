@@ -1,4 +1,3 @@
-\
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -42,7 +41,6 @@ init().catch(err => {
 
 app.get('/health', (req,res)=> res.json({ok:true}));
 
-// Registrar cliente
 app.post('/clientes/registrar', async (req, res) => {
   try {
     const { nombre, email, telefono } = req.body || {};
@@ -59,7 +57,6 @@ app.post('/clientes/registrar', async (req, res) => {
   }
 });
 
-// Login simple (email + telefono)
 app.post('/clientes/login', async (req, res) => {
   try {
     const { email, telefono } = req.body || {};
@@ -74,7 +71,6 @@ app.post('/clientes/login', async (req, res) => {
   }
 });
 
-// Crear nueva orden
 app.post('/ordenes', async (req, res) => {
   try {
     const { cliente_id, plato, extras } = req.body || {};
@@ -88,7 +84,6 @@ app.post('/ordenes', async (req, res) => {
   }
 });
 
-// Listar órdenes de un cliente
 app.get('/ordenes/:clienteId', async (req, res) => {
   try {
     const { clienteId } = req.params;
@@ -101,19 +96,16 @@ app.get('/ordenes/:clienteId', async (req, res) => {
   }
 });
 
-// Avanzar estado de una orden (created -> preparing -> delivered)
 app.patch('/ordenes/:id/estado', async (req, res) => {
   try {
     const { id } = req.params;
-    const getQ = `SELECT * FROM ordenes WHERE id=$1`;
-    const { rows } = await pool.query(getQ, [id]);
+    const { rows } = await pool.query(`SELECT estado FROM ordenes WHERE id=$1`, [id]);
     if (rows.length === 0) return res.status(404).json({error:'Orden no encontrada'});
     const actual = rows[0].estado;
     let next = actual;
     if (actual === 'created') next = 'preparing';
     else if (actual === 'preparing') next = 'delivered';
-    const updQ = `UPDATE ordenes SET estado=$1 WHERE id=$2 RETURNING *`;
-    const upd = await pool.query(updQ, [next, id]);
+    const upd = await pool.query(`UPDATE ordenes SET estado=$1 WHERE id=$2 RETURNING *`, [next, id]);
     res.json(upd.rows[0]);
   } catch (e) {
     console.error(e);
@@ -121,10 +113,10 @@ app.patch('/ordenes/:id/estado', async (req, res) => {
   }
 });
 
-// Página principal (frontend)
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor escuchando en puerto ${PORT}`));
+
